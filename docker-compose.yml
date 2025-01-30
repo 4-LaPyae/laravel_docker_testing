@@ -1,4 +1,4 @@
-version: "3.7"
+version: "3.8"
 services:
   app:
     build:
@@ -7,45 +7,69 @@ services:
         uid: 1000
       context: ./
       dockerfile: Dockerfile
-    image: demo
-    container_name: demo-app
+    image: demo_app
+    container_name: demo_app_c1
     restart: unless-stopped
     working_dir: /var/www/
     volumes:
       - ./:/var/www
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
     networks:
-      - demo
+      - demo_network
+    # environment:
+    #   - DB_HOST=host.docker.internal
+    #   - DB_PORT=3306
+    #   - DB_DATABASE=mmf
+    #   - DB_USERNAME=root
+    #   - DB_PASSWORD=lapyae0011
+    # depends_on:
+    #   - db
   db:
     image: mysql:8.0
-    container_name: demo-db
+    container_name: demo_db_c1
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_USER: ${DB_USERNAME}
+      MYSQL_DATABASE: demo
+      MYSQL_ROOT_PASSWORD: lapyae00111
+      MYSQL_PASSWORD: lapyae00111
+      MYSQL_ROOT_USER: root
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
     volumes:
       - dbdata:/var/lib/mysql/
+      - ./docker/sql/mmf.sql:/docker-entrypoint-initdb.d/mmf.sql
     ports:
-      - 3306:3306
+      - 3307:3306
     networks:
-      - demo
-  nginx:
+      - demo_network
+  # nginx Service
+  webserver:
     image: nginx:1.17-alpine
-    container_name: demo-nginx
+    container_name: demo_webserver_c1
     restart: unless-stopped
     ports:
-      - 80:80
+      - 8080:80
     volumes:
       - ./:/var/www
       - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
     networks:
-      - demo
+      - demo_network
+# phpMyAdmin Service
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5.2.0
+    container_name: demo_phpmyadmin_c1
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: lapyae00111
+    depends_on:
+      - db
+    networks:
+      - demo_network
 networks:
-  demo:
+  demo_network:
     driver: bridge
 volumes:
   dbdata:
